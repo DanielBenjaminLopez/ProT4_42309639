@@ -15,32 +15,63 @@ class LibroController {
 
   async add(req, res) {
     try {
-      const libro = req.body;
-      const [result] = await pool.query(
-        `INSERT INTO libros(nombre, autor, categoria, añopublicacion, ISBN) VALUES (?,?,?,?,?)`,
-        [
-          libro.nombre,
-          libro.autor,
-          libro.categoria,
-          libro.añopublicacion,
-          libro.ISBN,
-        ]
+      const { nombre, autor, categoria, añopublicacion, ISBN, ...extraFields } =
+        req.body;
+
+      // Validamos que no existan campos adicionales no deseados
+      if (Object.keys(extraFields).length > 0) {
+        return res.status(400).json({
+          error: 'Atributos adicionales no permitidos',
+          extraFields,
+        });
+      }
+
+      // Validamos que todos los campos requeridos estén presentes
+      if (!nombre || !autor || !categoria || !añopublicacion || !ISBN) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios' });
+      }
+
+      // Verificamos si ya existe un libro con el mismo ISBN
+      const [existingBook] = await pool.query(
+        'SELECT 1 FROM libros WHERE ISBN = ?',
+        [ISBN]
       );
+
+      if (existingBook.length > 0) {
+        return res.status(400).json({
+          error: 'Ya existe un libro con el mismo ISBN',
+        });
+      }
+
+      // Insertamos solo los campos válidos en la base de datos
+      const [result] = await pool.query(
+        'INSERT INTO libros(nombre, autor, categoria, añopublicacion, ISBN) VALUES (?, ?, ?, ?, ?)',
+        [nombre, autor, categoria, añopublicacion, ISBN]
+      );
+
       res.json({ 'ID insertado': result.insertId });
     } catch (error) {
-      res
-        .status(500)
-        .json({ error: 'Error al añadir el libro', details: error.message });
+      res.status(500).json({
+        error: 'Error al añadir el libro',
+        details: error.message,
+      });
     }
   }
 
   async delete(req, res) {
     try {
-      const libro = req.body;
-      const [result] = await pool.query(`DELETE FROM libros WHERE ISBN=(?)`, [
-        libro.ISBN,
+      const { ISBN } = req.body;
+      const [result] = await pool.query(`DELETE FROM libros WHERE ISBN = ?`, [
+        ISBN,
       ]);
-      res.json({ 'Libro eliminado': result.affectedRows });
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          error: 'Libro no encontrado, no se eliminó ningún registro',
+        });
+      }
+
+      res.json({ message: 'Libro eliminado exitosamente' });
     } catch (error) {
       res
         .status(500)
@@ -51,25 +82,38 @@ class LibroController {
   async update(req, res) {
     try {
       const libro = req.body;
+      // Validamos que todos los campos requeridos estén presentes
+      if (
+        !libro.nombre ||
+        !libro.autor ||
+        !libro.categoria ||
+        !libro.añopublicacion ||
+        !libro.ISBN
+      ) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios' });
+      }
       const [result] = await pool.query(
-        `UPDATE libros SET nombre=(?), autor=(?), categoria=(?), añopublicacion=(?), ISBN=(?) WHERE id=(?)`,
+        `UPDATE libros SET nombre=(?), autor=(?), categoria=(?), añopublicacion=(?) WHERE ISBN=(?)`,
         [
           libro.nombre,
           libro.autor,
           libro.categoria,
           libro.añopublicacion,
           libro.ISBN,
-          libro.id,
         ]
       );
-      res.json({ 'Libros modificados': result.changedRows });
-    } catch (error) {
-      res
-        .status(500)
-        .json({
-          error: 'Error al actualizar el libro',
-          details: error.message,
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          error: 'Libro no encontrado, no se actualizó ningún registro',
         });
+      }
+
+      res.json({ message: 'Libro actualizado exitosamente' });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Error al actualizar el libro',
+        details: error.message,
+      });
     }
   }
 }
