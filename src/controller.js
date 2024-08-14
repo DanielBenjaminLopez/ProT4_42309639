@@ -13,6 +13,24 @@ class LibroController {
     }
   }
 
+  async getOne(req, res) {
+    try {
+      const libro = req.body;
+      const [result] = await pool.query(
+        'SELECT nombre, autor, categoria, añopublicacion, ISBN FROM libros WHERE id = (?)',
+        [libro.id]
+      );
+
+      // Si se encuentra el libro, devolver los resultados.
+      res.json(result[0]);
+    } catch (error) {
+      res.status(500).json({
+        error: 'Error al obtener el libro',
+        details: error.message,
+      });
+    }
+  }
+
   async add(req, res) {
     try {
       const { nombre, autor, categoria, añopublicacion, ISBN, ...extraFields } =
