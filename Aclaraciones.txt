@@ -1,0 +1,13 @@
+
+
+Link repositorio: 
+https://github.com/DanielBenjaminLopez/ProT4_42309639.git
+
+Aclaraciones
+- Para el ALTA de un libro se verifica que la petición tenga los atributos según el modelo de datos dado y que el ISBN no exista previamente en la BD porque debería ser unico, a pesar de que en la consigna no se lo considera de tal forma.
+
+- La CONSULTA de un libro se realiza mediante un ID, por lo tanto se lo considera atributo obligatorio en la petición, y se devuelve un mensaje si no lo encuentra.
+
+- La ACTUALIZACIÓN de un libro se realiza mediante el ISBN del libro, verificando que exista el ISBN y todos los atributos del modelo de datos en la petición.
+
+- La ELIMINACIÓN de un libro se realiza mediante el ISBN del libro, y se devuelve un mensaje si no lo encuentra.
