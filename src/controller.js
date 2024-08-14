@@ -20,6 +20,18 @@ class LibroController {
         'SELECT nombre, autor, categoria, añopublicacion, ISBN FROM libros WHERE id = (?)',
         [libro.id]
       );
+      //Veo si el existe el id en el body
+      if (!libro.id) {
+        return res.status(400).json({
+          error: 'El parámetro id es obligatorio',
+        });
+      }
+      // Si no se encontraron resultados, `result` será un array vacío.
+      if (result.length === 0) {
+        return res.status(404).json({
+          error: 'Libro no encontrado',
+        });
+      }
 
       // Si se encuentra el libro, devolver los resultados.
       res.json(result[0]);
